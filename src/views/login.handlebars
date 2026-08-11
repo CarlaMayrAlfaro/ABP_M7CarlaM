@@ -1,0 +1,38 @@
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card shadow" style="max-width: 420px; width: 100%;">
+        <div class="card-body p-4">
+            <h1 class="card-title text-center mb-3">Acceso Administrador</h1>
+            {{#if error}}
+            <div class="alert alert-danger" role="alert">
+                {{error}}
+            </div>
+            {{/if}}
+            <form action="/login" method="POST">
+                <div class="mb-3">
+                    <label for="correo" class="form-label">Correo</label>
+                    <input
+                        type="email"
+                        class="form-control"
+                        id="correo"
+                        name="correo"
+                        placeholder="admin@admin.com"
+                        required
+                    />
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="password"
+                        name="password"
+                        placeholder="admin123"
+                        required
+                    />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
+            </form>
+            <p class="small text-center text-muted mt-3 mb-0">Usa las credenciales de administrador para ver el menú.</p>
+        </div>
+    </div>
+</div>

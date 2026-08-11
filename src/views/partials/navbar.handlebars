@@ -1,0 +1,89 @@
+{{#if isAuthenticated}}
+
+<nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top">
+
+
+<div class="container">
+
+    <!-- Logo y nombre -->
+    <a class="navbar-brand d-flex align-items-center fw-semibold text-primary" href="/">
+
+       <img
+        src="/img/logo_medigest.png"
+        alt="MediGest Salud Digital"
+        width="100"
+        class="me-2"
+        >
+
+        <span class="d-none d-sm-inline">
+            MediGest <span class="text-dark">Salud Digital</span>
+        </span>
+
+    </a>
+
+
+    <!-- Botón menú responsive -->
+    <button
+        class="navbar-toggler border-0"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNavAltMarkup"
+        aria-controls="navbarNavAltMarkup"
+        aria-expanded="false"
+        aria-label="Abrir menú"
+    >
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+
+    <!-- Menú -->
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+
+        <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+
+            <a
+                class="nav-link px-3 fw-medium"
+                href="/">
+                Inicio
+            </a>
+
+            <a
+                class="nav-link px-3 fw-medium"
+                href="/usuarios">
+                Pacientes
+            </a>
+
+            <a
+                class="nav-link px-3 fw-medium"
+                href="/crear-usuarios">
+                Crear paciente
+            </a>
+
+
+            <!-- Separador -->
+            <div class="vr d-none d-lg-block mx-2"></div>
+
+
+            <!-- Cerrar sesión -->
+            <form
+                action="/logout"
+                method="POST"
+                class="d-flex ms-lg-2 mt-2 mt-lg-0"
+            >
+                <button
+                    type="submit"
+                    class="btn btn-outline-danger btn-sm px-3"
+                >
+                    Cerrar sesión
+                </button>
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+</nav>
+
+{{/if}}

@@ -1,0 +1,24 @@
+<div id="view-perfil">
+
+    <header class="py-3">
+        <h1 class="text-center">Perfil Paciente</h1>
+    </header>
+
+    <main class="container">
+
+        {{#if usuario }}
+        <section>
+            <p>Nombre: {{usuario.nombre}}</p>
+            <p>Apellido: {{usuario.apellido}}</p>
+        </section>
+
+        {{else}}
+        <section>
+            <p class="fs-2 fw-bold text-center">No existe ningun paciente con el id: {{id}}</p>
+        </section>
+        {{/if}}
+        
+        
+    </main>
+
+</div>

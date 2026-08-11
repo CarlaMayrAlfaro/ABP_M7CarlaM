@@ -1,0 +1,178 @@
+<div id="view-crear-usuario">
+
+ <header class="py-4">
+    <h1 class="text-center fw-bold text-primary mb-2">
+        Crear nuevo paciente
+    </h1>
+    <p class="text-center text-muted mb-0">
+        Registra los datos del paciente para incorporarlo al sistema
+    </p>
+</header>
+
+<main class="container pb-5">
+
+```
+<section class="row justify-content-center">
+
+    <div class="col-12 col-md-8 col-lg-6">
+
+        <div class="card shadow-sm border-0">
+
+            <!-- Encabezado -->
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 text-center">
+                    Datos del paciente
+                </h5>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card-body p-4">
+
+                <form action="/api/usuarios" method="post" id="form-create-usuario">
+
+                    <!-- Nombre -->
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label fw-semibold">
+                            Nombre
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="nombre"
+                            id="nombre"
+                            placeholder="Ingresa el nombre"
+                            required
+                        >
+                    </div>
+
+                    <!-- Apellido -->
+                    <div class="mb-3">
+                        <label for="apellido" class="form-label fw-semibold">
+                            Apellido
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="apellido"
+                            id="apellido"
+                            placeholder="Ingresa el apellido"
+                            required
+                        >
+                    </div>
+
+                    <!-- Correo -->
+                    <div class="mb-4">
+                        <label for="correo" class="form-label fw-semibold">
+                            Correo electrónico
+                        </label>
+
+                        <input
+                            type="email"
+                            class="form-control"
+                            name="correo"
+                            id="correo"
+                            placeholder="ejemplo@correo.com"
+                            required
+                        >
+
+                        <div class="form-text">
+                            Utiliza un correo electrónico válido.
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-flex justify-content-end gap-2">
+
+                        <button
+                            type="reset"
+                            class="btn btn-outline-secondary">
+                            Limpiar
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary px-4">
+                            Crear paciente
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <!-- Mensaje de éxito -->
+                <div
+                    class="alert alert-success d-none mt-4 mb-0"
+                    role="alert"
+                    id="alert-success">
+
+                    Paciente creado con éxito.
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+```
+
+</main>
+
+
+</div>
+
+
+<script>
+    const formCreateUsuario = document.getElementById("form-create-usuario");
+
+    formCreateUsuario.addEventListener("submit", async (event) => {
+        try {
+            event.preventDefault();
+
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+
+            const raw = JSON.stringify({
+                "nombre": nombre.value,
+                "apellido": apellido.value,
+                "correo": correo.value
+            });
+
+            const requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: raw,
+                redirect: "follow"
+            };
+
+            const response = await fetch("/api/usuarios", requestOptions);
+
+            const data = await response.json();
+
+            if(response.status == 201){
+                const alertSuccess = document.getElementById("alert-success");
+                alertSuccess.textContent = data.message;
+                alertSuccess.classList.remove("d-none");
+
+                formCreateUsuario.reset();
+
+                let { usuario } = data;
+                setTimeout(()=> {
+                    location.href = "/usuarios/perfil/"+usuario.id;
+                }, 2000);
+
+            }else {
+                console.log(data);
+                alert(data.message);
+            }
+
+        } catch (error) {
+            console.log(error);
+            alert("Error al intentar crear el paciente");
+        }
+    })
+</script>
