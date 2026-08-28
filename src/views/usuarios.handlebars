@@ -1,46 +1,44 @@
 <div id="view-usuarios" class="card shadow-sm border-0">
+  <header class="py-3">
+    <h1 class="text-center">Listado de pacientes</h1>
+  </header>
 
-    <header class="py-3">
-        <h1 class="text-center">Listado de pacientes</h1>
-    </header>
-    <div class="card-header bg-primary text-white">
+  <div class="card-header bg-primary text-white">
     <h5 class="mb-0">Pacientes registrados</h5>
-    </div>
+  </div>
 
-    <main class="container">
-
-        <section>
-
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th scope="col">ID</th>
-                        <th scope="col">Nombre</th>
-                        <th scope="col">Apellido</th>
-                        <th scope="col">Correo</th>
-                        <th scope="col">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-
-                    {{#each usuarios}}
-                    <tr>
-                        <th scope="row">{{id}}</th>
-                        <td>{{nombre}}</td>
-                        <td>{{apellido}}</td>
-                        <td>{{correo}}</td>
-                        <td >
-                            <a class="btn btn-sm btn-outline-info" href="/usuarios/perfil/{{id}}">Ver</a>
-                            <a class="btn btn-sm btn-outline-warning" href="">Actualizar</a>
-                            <a class="btn btn-sm btn-outline-danger"href="">Eliminar</a>
-                        </td>
-                    </tr>
-                    {{/each }}
-                </tbody>
-            </table>
-
-        </section>
-
-    </main>
-
+  <main class="container">
+    <section>
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Correo</th>
+            <th>Observaciones</th>
+            <th>Historial</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each usuarios}}
+          <tr>
+            <th scope="row">{{id}}</th>
+            <td>{{nombre}}</td>
+            <td>{{apellido}}</td>
+            <td>{{correo}}</td>
+            <td>{{observaciones}}</td>
+            <td>{{historial.length}} registro(s)</td>
+            <td>
+              <a class="btn btn-sm btn-outline-info" href="/usuarios/perfil/{{id}}">Ver</a>
+              <a class="btn btn-sm btn-outline-warning" href="/usuarios/actualizar/{{id}}">Actualizar</a>
+              <a class="btn btn-sm btn-outline-danger" href="/usuarios/eliminar/{{id}}" onclick="return confirm('¿Eliminar este paciente?');">Eliminar</a>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </section>
+  </main>
 </div>

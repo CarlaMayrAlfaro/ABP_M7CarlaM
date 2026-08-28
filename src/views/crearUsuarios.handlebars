@@ -11,7 +11,6 @@
 
 <main class="container pb-5">
 
-```
 <section class="row justify-content-center">
 
     <div class="col-12 col-md-8 col-lg-6">
@@ -28,7 +27,7 @@
             <!-- Formulario -->
             <div class="card-body p-4">
 
-                <form action="/api/usuarios" method="post" id="form-create-usuario">
+                <form id="form-create-usuario">
 
                     <!-- Nombre -->
                     <div class="mb-3">
@@ -82,6 +81,21 @@
                         </div>
                     </div>
 
+                    <!-- Observaciones -->
+                    <div class="mb-4">
+                        <label for="observaciones" class="form-label fw-semibold">
+                            Observaciones
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            name="observaciones"
+                            id="observaciones"
+                            rows="3"
+                            placeholder="Ingresa observaciones (opcional)"
+                        ></textarea>
+                    </div>
+
                     <!-- Botones -->
                     <div class="d-flex justify-content-end gap-2">
 
@@ -118,10 +132,8 @@
     </div>
 
 </section>
-```
 
 </main>
-
 
 </div>
 
@@ -133,46 +145,62 @@
         try {
             event.preventDefault();
 
-            const myHeaders = new Headers();
-            myHeaders.append("Content-Type", "application/json");
+            // Obtener valores del formulario
+            const nombre = document.getElementById("nombre").value.trim();
+            const apellido = document.getElementById("apellido").value.trim();
+            const correo = document.getElementById("correo").value.trim();
+            const observaciones = document.getElementById("observaciones").value.trim();
 
-            const raw = JSON.stringify({
-                "nombre": nombre.value,
-                "apellido": apellido.value,
-                "correo": correo.value
-            });
+            // Validar que no estén vacíos
+            if (!nombre || !apellido || !correo) {
+                alert("Por favor completa los campos obligatorios: nombre, apellido y correo");
+                return;
+            }
 
-            const requestOptions = {
-                method: "POST",
-                headers: myHeaders,
-                body: raw,
-                redirect: "follow"
+            // Construir objeto - JSON.stringify maneja automáticamente saltos de línea
+            const datos = {
+                nombre: nombre,
+                apellido: apellido,
+                correo: correo,
+                observaciones: observaciones // puede estar vacío, pero eso está bien
             };
 
-            const response = await fetch("/api/usuarios", requestOptions);
+            console.log("Datos a enviar:", datos);
+
+            // JSON.stringify() escapa automáticamente caracteres especiales
+            const jsonBody = JSON.stringify(datos);
+            console.log("JSON a enviar:", jsonBody);
+
+            const response = await fetch("/api/usuarios", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: jsonBody
+            });
 
             const data = await response.json();
+            console.log("Respuesta del servidor:", data);
 
-            if(response.status == 201){
+            if (response.status === 201) {
                 const alertSuccess = document.getElementById("alert-success");
                 alertSuccess.textContent = data.message;
                 alertSuccess.classList.remove("d-none");
 
                 formCreateUsuario.reset();
 
-                let { usuario } = data;
-                setTimeout(()=> {
-                    location.href = "/usuarios/perfil/"+usuario.id;
+                const usuarioId = data.data.id;
+                setTimeout(() => {
+                    location.href = "/usuarios/perfil/" + usuarioId;
                 }, 2000);
 
-            }else {
-                console.log(data);
-                alert(data.message);
+            } else {
+                alert("Error: " + (data.message || "No se pudo crear el paciente"));
             }
 
         } catch (error) {
-            console.log(error);
-            alert("Error al intentar crear el paciente");
+            console.error("Error al crear paciente:", error);
+            alert("Hubo un error al intentar crear el paciente: " + error.message);
         }
-    })
+    });
 </script>

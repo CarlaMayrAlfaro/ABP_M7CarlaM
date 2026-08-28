@@ -1,0 +1,79 @@
+<div id="view-actualizar-usuario">
+  <header class="py-4">
+    <h1 class="text-center fw-bold text-primary mb-2">Actualizar paciente</h1>
+    <p class="text-center text-muted mb-0">Modifica los datos del paciente seleccionado</p>
+  </header>
+
+  <main class="container pb-5">
+    <section class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 text-center">Datos del paciente</h5>
+          </div>
+
+          <div class="card-body p-4">
+            <form id="form-update-usuario">
+              <div class="mb-3">
+                <label for="nombre" class="form-label fw-semibold">Nombre</label>
+                <input type="text" class="form-control" name="nombre" id="nombre" value="{{usuario.nombre}}" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="apellido" class="form-label fw-semibold">Apellido</label>
+                <input type="text" class="form-control" name="apellido" id="apellido" value="{{usuario.apellido}}" required>
+              </div>
+
+              <div class="mb-4">
+                <label for="correo" class="form-label fw-semibold">Correo electrónico</label>
+                <input type="email" class="form-control" name="correo" id="correo" value="{{usuario.correo}}" required>
+              </div>
+
+              <div class="mb-4">
+                <label for="observaciones" class="form-label fw-semibold">Observaciones</label>
+                <textarea class="form-control" name="observaciones" id="observaciones" rows="3">{{usuario.observaciones}}</textarea>
+              </div>
+
+              <div class="d-flex justify-content-end gap-2">
+                <a href="/usuarios" class="btn btn-outline-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const formUpdateUsuario = document.getElementById("form-update-usuario");
+
+  formUpdateUsuario.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch("/api/usuarios/{{usuario.id}}", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: document.getElementById("nombre").value,
+          apellido: document.getElementById("apellido").value,
+          correo: document.getElementById("correo").value,
+          observaciones: document.getElementById("observaciones").value,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return alert(data.message || "No fue posible actualizar el paciente.");
+      }
+
+      window.location.href = "/usuarios/perfil/{{usuario.id}}";
+    } catch (error) {
+      console.error(error);
+      alert("Error al intentar actualizar el paciente.");
+    }
+  });
+</script>

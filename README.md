@@ -1,109 +1,200 @@
-# MediGest — ABP M6
+# MediGest — ABP M7
 
-Pequeña aplicación Express + Handlebars para gestión de pacientes (ejemplo).
+Aplicación para gestionar pacientes usando **Express** (backend), **Handlebars** (páginas web) y **PostgreSQL** (base de datos).
 
-## Resumen
+## ¿Qué hace esta app?
 
-- Rutas de vistas protegidas por login de administrador.
-- Navbar oculto hasta iniciar sesión.
-- IDs de usuarios acortados a 8 caracteres.
-- Usos de paquetes para el desarrollo del backend
+✅ Crear, editar, ver y eliminar información de pacientes  
+✅ Guardar observaciones sobre cada paciente  
+✅ Registrar automáticamente qué cambios se hacen y cuándo  
+✅ Proteger la app con login de administrador  
+✅ Usar una base de datos real (PostgreSQL)
 
-## Requisitos
+## Lo que necesitas
 
-- Node.js v16+ (o compatible)
-- npm
+- **Node.js** v16+ 
+- **npm** (viene con Node.js)
+- **PostgreSQL** ejecutándose en tu computadora
 
-## Instalación
+## Cómo instalar y usar
 
-1. Instala dependencias:
+### 1️⃣ Descarga y prepara el proyecto
 
 ```bash
+# Instala los paquetes necesarios
 npm install
 ```
 
-2. Inicia la aplicación (ejemplo puerto 3000):
+### 2️⃣ Configura la base de datos
 
-```bash
-node server.js --puerto 3000
-# o
-npm run dev
+Crea un archivo `.env` en la carpeta raíz (la misma donde está `package.json`):
+
+```
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=medigest
+DB_USER=tu_usuario_postgres
+DB_PASSWORD=tu_contraseña
+
+ADMIN_EMAIL=admin@admin.com
+ADMIN_PASSWORD=admin123
 ```
 
-3. Abre en el navegador:
+**⚠️ Importante:** Reemplaza `tu_usuario_postgres` y `tu_contraseña` con los datos que usas en PostgreSQL.
+DB_NAME =Cada persona usa el nombre de SU base de datos, solo tiene que coincidir con el nombre real en PostgreSQL.
 
-- `http://localhost:3000/login` — formulario de acceso (ruta renderizada por Express)
+### 3️⃣ Inicia el servidor
 
-## Estructura de carpetas
+```bash
+node server.js --puerto 3001
+```
 
-- `/public` — recursos estáticos accesibles desde el navegador.
-  - `/public/css` — hojas de estilo CSS.
-  - `/public/img` — imágenes usadas en la app.
+Verás esto en la terminal:
+```
+✅ Conexión a PostgreSQL establecida correctamente.
+✅ Base de datos sincronizada correctamente.
+Servidor escuchando en http://localhost:3001
+```
 
-- `/src` — código principal de la aplicación.
-  - `/src/controllers` — controladores que gestionan la lógica de rutas.
-    - `auth.controllers.js` — acciones de login y logout.
-    - `usuarios.controllers.js` — operaciones sobre usuarios.
-    - `views.controllers.js` — renderizado de vistas.
-  - `/src/data` — datos de prueba y almacenamiento local.
-    - `usuarios.json` — lista inicial de usuarios.
-  - `/src/logs` — archivos de registro.
-    - `log_request.txt` — historial de solicitudes HTTP.
-  - `/src/middlewares` — funciones intermedias para Express.
-    - `auth.middleware.js` — protege rutas privadas.
-    - `validate_body.js` — valida datos entrantes.
-  - `/src/models` — modelos de datos.
-    - `Usuario.model.js` — crea usuarios y genera IDs.
-  - `/src/routes` — definición de rutas.
-    - `auth.routes.js` — rutas de autenticación.
-    - `usuarios.routes.js` — rutas de usuario y API.
-    - `views.routes.js` — rutas de páginas renderizadas.
-  - `/src/utils` — utilidades de la aplicación.
-    - `persistencia.js` — lectura y escritura de datos JSON.
-  - `/src/views` — plantillas Handlebars para las páginas.
-    - `layouts/main.handlebars` — plantilla base.
-    - `partials/navbar.handlebars` — fragmento de barra de navegación.
+### 4️⃣ Entra a la app
 
-- `server.js` — punto de entrada del servidor Express.
-- `package.json` — dependencias y scripts del proyecto.
-- `README.md` — documentación del proyecto.
+Abre el navegador y ve a:
+```
+http://localhost:3001/login
+```
 
-## Credenciales de administrador (por defecto)
+Usa estas credenciales:
+- **Correo:** `admin@admin.com`
+- **Contraseña:** `admin123`
 
-- Correo: `admin@admin.com`
-- Contraseña: `admin123`
+---
 
-Al iniciar sesión con esas credenciales se mostrará el navbar y las vistas protegidas.
+## Estructura de carpetas (la basica)
 
-## Rutas principales
+```
+📦 MediGest
+├── 📁 public              ← Imágenes y estilos (CSS)
+├── 📁 src
+│   ├── 📁 config          ← Conexión a PostgreSQL
+│   ├── 📁 controllers     ← La lógica de cada página
+│   ├── 📁 logs            ← Registro de solicitudes
+│   ├── 📁 middlewares     ← Protección de rutas
+│   ├── 📁 models          ← Estructura de datos (usuarios, historial)
+│   ├── 📁 routes          ← URLs de la app
+│   └── 📁 views           ← Las páginas HTML (Handlebars)
+├── app.js                 ← Configuración de Express
+├── server.js              ← Inicia el servidor
+├── package.json           ← Lista de paquetes
+├── .env                   ← Datos privados (usuario, contraseña)
+└── README.md              ← Este archivo
 
-- `GET /login` — formulario de login
-- `POST /login` — procesar login
-- `POST /logout` — cerrar sesión
-- `GET /` — home (protegido)
-- `GET /crear-usuarios` — vista creación (protegido)
-- `GET /usuarios` — listar usuarios (protegido)
-- `GET /usuarios/perfil/:id` — ver perfil (protegido)
-- `API: /api/usuarios` — endpoints REST para usuarios
+```
 
-## Notas sobre cambios recientes
+## Lo que puedes hacer
 
-- Se modificó `src/models/Usuario.model.js` para generar IDs cortos: `uuidV4().slice(0,8)`.
-- Se actualizaron los `id` existentes en `src/data/usuarios.json` a 8 caracteres.
-- Se agrega carpeta Public para contener los estilos e imagenes
-- Se mejora estilos de la carpeta views usando boostrap
+### En la web (usando el navegador)
 
-## Verificación rápida
+- **Ver pacientes:** Ve a `/usuarios`
+- **Agregar paciente:** Ve a `/crear-usuarios`
+- **Editar paciente:** Haz clic en un paciente para ver su perfil y editar sus datos (nombre, correo, observaciones)
+- **Cerrar sesión:** Haz clic en "Logout"
 
-1. Ejecuta el servidor.
-2. Navega a `http://localhost:3000/login`.
-3. Usa las credenciales de administrador.
-4. Verifica que el navbar aparezca y que las rutas protegidas sean accesibles.
+### Con Postman (programa para probar APIs)
 
-## Esquema visual del flujo cliente-servidor
+**1. Inicia sesión:**
+```
+POST http://localhost:3001/login
+Body: { "correo": "admin@admin.com", "password": "admin123" }
+```
 
-![Flujo cliente servidor](/flujo_login_sesion_cookie.png)
+**2. Ver todos los pacientes:**
+```
+GET http://localhost:3001/api/usuarios
+```
 
-## Imagen del servidor en funcionamiento
+**3. Crear nuevo paciente:**
+```
+POST http://localhost:3001/api/usuarios
+Body: {
+  "nombre": "Juan",
+  "apellido": "Pérez",
+  "correo": "juan@example.com"
+  "observaciones": "Diabetes Mellitus tipo 2"
+}
+```
 
-![Imagen del Servidor](/image.png)
+**4. Editar paciente (agregar observaciones):**
+```
+PUT http://localhost:3001/api/usuarios/[ID_DEL_PACIENTE]
+Body: {
+  "nombre": "Juan",
+  "apellido": "Pérez",
+  "correo": "juan@example.com",
+  "observaciones": "Paciente con DM2"
+}
+```
+
+**5. Eliminar paciente:**
+```
+DELETE http://localhost:3001/api/usuarios/[ID_DEL_PACIENTE]
+```
+
+> **Nota:** Reemplaza `[ID_DEL_PACIENTE]` con el ID real del paciente (lo ves cuando haces GET).
+
+---
+
+## ¿Cómo funciona?
+
+### 1. **Guardas datos en PostgreSQL** 📊
+Cuando creas o editas un paciente, la información se guarda en una base de datos real (PostgreSQL), no en un archivo.
+
+### 2. **Se registra el historial** 📝
+Cada acción (crear, editar, eliminar) se guarda automáticamente en el "historial" del paciente.
+
+### 3. **Proteges con login** 🔐
+Solo el administrador (con correo y contraseña) puede ver y editar pacientes.
+
+### 4. **Usas Sequelize** 🔗
+Es una herramienta que facilita trabajar con la base de datos sin escribir SQL complicado.
+
+---
+
+## Cambios principales en M7
+
+✨ **PostgreSQL:** Antes guardábamos en un archivo JSON, ahora usamos una base de datos real  
+✨ **Sequelize ORM:** Hace más fácil comunicarse con PostgreSQL  
+✨ **Observaciones:** Nuevo campo para anotaciones clínicas  
+✨ **Historial automático:** Se registra quién cambió qué y cuándo  
+✨ **Tablas:** Se crean automáticamente cuando inicias la app  
+
+---
+
+## Si algo no funciona
+
+### Error: "no existe la relación"
+→ Probablemente PostgreSQL no está corriendo. Abre el programa de PostgreSQL.
+
+### Error: "no se puede conectar"
+→ Verifica que los datos en `.env` sean correctos.
+
+### No veo los datos
+→ Asegúrate de haber hecho login primero con las credenciales correctas.
+
+### ¿Cómo revisar la base de datos?
+Abre **pgAdmin** (programa que viene con PostgreSQL) o usa este comando en terminal:
+```bash
+psql -U tu_usuario_postgres -d medigest
+SELECT * FROM usuarios;
+```
+
+---
+
+## Resumen rápido
+
+| Lo que quieres | Cómo hacerlo |
+|---|---|
+| Crear paciente | Web: `/crear-usuarios` o POST a `/api/usuarios` |
+| Ver pacientes | Web: `/usuarios` o GET a `/api/usuarios` |
+| Editar paciente | Web: click en paciente + formulario o PUT a `/api/usuarios/ID` |
+| Eliminar paciente | Web: botón eliminar o DELETE a `/api/usuarios/ID` |
+| Agregar observaciones | Editar paciente + campo "Observaciones" |

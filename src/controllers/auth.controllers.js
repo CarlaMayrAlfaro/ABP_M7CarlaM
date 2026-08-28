@@ -1,6 +1,6 @@
 const ADMIN_CREDENTIALS = {
-  correo: "admin@admin.com",
-  password: "admin123",
+  correo: process.env.ADMIN_EMAIL || "admin@admin.com",
+  password: process.env.ADMIN_PASSWORD || "admin123",
   nombre: "Administrador",
 };
 
@@ -9,12 +9,11 @@ export const viewLogin = (req, res) => {
     return res.redirect("/");
   }
 
-  res.render("login", {
-    error: null,
-  });
+  res.render("login", { error: null });
 };
 
 export const login = (req, res) => {
+  console.log('BODY RECIBIDO:', req.body);
   const { correo, password } = req.body;
 
   if (!correo || !password) {

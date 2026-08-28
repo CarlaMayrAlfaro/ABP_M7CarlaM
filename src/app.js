@@ -9,6 +9,8 @@ import usuariosRoutes from "./routes/usuarios.routes.js";
 import viewsRoutes from "./routes/views.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { parseSession } from "./middlewares/auth.middleware.js";
+import sequelize from "./config/database.js";
+import "./models/Index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -64,6 +66,26 @@ app.use("/", authRoutes);
 app.use("/", viewsRoutes);
 
 //RUTAS DE API
+
 app.use("/api/usuarios", usuariosRoutes);
+
+
+// CONEXIÓN Y SINCRONIZACIÓN CON POSTGRESQL
+
+export const initDatabase = async () => {
+  try {
+    await sequelize.authenticate();
+
+    console.log("✅ Conexión a PostgreSQL establecida correctamente.");
+
+    await sequelize.sync({ alter: true });
+
+    console.log("✅ Base de datos sincronizada correctamente.");
+  } catch (error) {
+    console.error("❌ Error al conectar con PostgreSQL:", error.message);
+    throw error;
+  }
+};
+
 
 export default app;
