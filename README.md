@@ -1,6 +1,9 @@
 # MediGest — ABP Módulos 6, 7 y 8
 
-Aplicación Express + Handlebars + PostgreSQL (Sequelize) para gestión de pacientes. Incluye vistas protegidas por sesión de administrador y una **API RESTful protegida con JWT**, con subida de la foto de perfil del paciente.
+Aplicación Express + Handlebars + PostgreSQL (Sequelize) para gestión de
+pacientes. Incluye una landing pública, vistas protegidas por sesión de
+administrador y una **API RESTful protegida con JWT**, con subida de la
+foto de perfil del paciente.
 
 ## Resumen por módulo
 
@@ -12,8 +15,10 @@ Aplicación Express + Handlebars + PostgreSQL (Sequelize) para gestión de pacie
   búsqueda filtrada (`?nombre=`), consulta SQL manual de comparación.
 - **Módulo 8** *(esta entrega)*:
   - API REST protegida con **JSON Web Tokens**.
-  - **Subida de archivos**: foto de perfil del paciente, con `multer`.
+  - **Subida de archivos**: foto de perfil del paciente, con `multer`
+    (disponible tanto al crear el paciente como después, desde su perfil).
   - Respuestas de la API con formato consistente `{ status, message, data }`.
+  - Landing pública (`/`) y dashboard con estadísticas reales (`/inicio`).
 
 ## Requisitos
 
@@ -52,12 +57,31 @@ node server.js --puerto 3000
 npm run dev
 ```
 
-Abre `http://localhost:3000/login`.
+Abre `http://localhost:3000/` — te recibe la landing pública. Desde ahí,
+"Iniciar sesión" te lleva a `/login`.
 
 ## Credenciales de administrador (por defecto)
 
 - Correo: `admin@admin.com`
 - Contraseña: `admin123`
+
+---
+
+## Navegación general de la app
+
+| Ruta | Acceso | Descripción |
+|---|---|---|
+| `/` | Pública | Landing de bienvenida. Si ya hay sesión activa, redirige directo a `/inicio`. |
+| `/login` | Pública | Formulario de login. Si ya hay sesión activa, redirige a `/inicio`. |
+| `/inicio` | Protegida | Dashboard con estadísticas (total de pacientes, % con foto, pacientes recientes, actividad reciente). |
+| `/usuarios` | Protegida | Listado de pacientes. |
+| `/crear-usuarios` | Protegida | Formulario de creación (incluye foto opcional). |
+| `/usuarios/perfil/:id` | Protegida | Perfil del paciente, con su foto e historial. |
+| `/usuarios/actualizar/:id` | Protegida | Formulario de edición. |
+| `/usuarios/eliminar/:id` | Protegida | Elimina y redirige al listado. |
+
+Al cerrar sesión (`POST /logout`) se limpian ambas cookies y se redirige a
+la landing pública (`/`), no al formulario de login.
 
 ---
 
@@ -68,7 +92,7 @@ sesión distinto para cada uno:
 
 | Consumidor | Ruta protegida | Mecanismo | Middleware |
 |---|---|---|---|
-| Navegador (vistas) | `/`, `/usuarios`, `/crear-usuarios`, etc. | Cookie `admin=true` (httpOnly) | `authGuard` |
+| Navegador (vistas) | `/inicio`, `/usuarios`, `/crear-usuarios`, etc. | Cookie `admin=true` (httpOnly) | `authGuard` |
 | API REST | `/api/usuarios/*` | JWT (`Authorization: Bearer <token>`) | `authenticateJWT` |
 
 ### ¿Por qué separar así?
@@ -108,7 +132,7 @@ Se protegió **toda la API `/api/usuarios/*`** (no solo 2 rutas puntuales)
 porque cada endpoint expone o modifica datos clínicos de pacientes — no
 existe ningún caso de uso donde deba quedar público. Esto incluye
 explícitamente las 2 rutas mínimas que pide la consigna, y de hecho las
-supera: `GET`, `POST`, `PUT`, `DELETE` y la nueva subida de foto
+supera: `GET`, `POST`, `PUT`, `DELETE` y la subida de foto
 (`POST /:id/foto`) requieren todas un JWT válido y **no funcionan sin él**
 (devuelven `401` inmediatamente si falta o es inválido/expiró).
 
@@ -116,19 +140,20 @@ supera: `GET`, `POST`, `PUT`, `DELETE` y la nueva subida de foto
 
 ## Endpoints
 
-### Vistas (protegidas por cookie de sesión)
+### Vistas (públicas o protegidas por cookie de sesión)
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| GET | `/login` | Formulario de login |
-| POST | `/login` | Procesa login, setea cookies `admin` y `token` |
-| POST | `/logout` | Cierra sesión, limpia ambas cookies |
-| GET | `/` | Home |
-| GET | `/crear-usuarios` | Formulario de creación |
-| GET | `/usuarios` | Listado de pacientes |
-| GET | `/usuarios/perfil/:id` | Perfil de paciente (incluye foto y formulario de subida) |
-| GET | `/usuarios/actualizar/:id` | Formulario de edición |
-| GET | `/usuarios/eliminar/:id` | Elimina y redirige al listado |
+| Método | Ruta | Acceso | Descripción |
+|---|---|---|---|
+| GET | `/` | Pública | Landing de bienvenida |
+| GET | `/login` | Pública | Formulario de login |
+| POST | `/login` | Pública | Procesa login, setea cookies `admin` y `token` |
+| POST | `/logout` | — | Cierra sesión, limpia ambas cookies, redirige a `/` |
+| GET | `/inicio` | Cookie | Dashboard con estadísticas |
+| GET | `/crear-usuarios` | Cookie | Formulario de creación (con foto opcional) |
+| GET | `/usuarios` | Cookie | Listado de pacientes |
+| GET | `/usuarios/perfil/:id` | Cookie | Perfil de paciente (foto, datos, historial, subir/cambiar foto) |
+| GET | `/usuarios/actualizar/:id` | Cookie | Formulario de edición |
+| GET | `/usuarios/eliminar/:id` | Cookie | Elimina y redirige al listado |
 
 ### API REST (JSON, protegida por JWT salvo donde se indique)
 
@@ -208,6 +233,15 @@ En Postman: método `POST`, pestaña **Body → form-data**, key `foto` tipo
 - **Carpeta destino**: `public/uploads/pacientes/` (se sirve como estática
   vía `express.static`, así que la foto queda accesible directo en
   `http://localhost:3000/uploads/pacientes/<archivo>`).
+- **Dos momentos para subirla**:
+  1. Al **crear** un paciente (`crearUsuarios.handlebars`): el campo de
+     foto es opcional; si se selecciona un archivo, apenas se crea el
+     paciente (`POST /api/usuarios`) se dispara automáticamente un segundo
+     llamado a `POST /api/usuarios/:id/foto` con el `id` recién generado.
+     Si la foto falla por algún motivo, el paciente igual queda creado —
+     solo se avisa que la foto no se pudo subir.
+  2. Desde el **perfil** del paciente (`perfilUsuario.handlebars`): en
+     cualquier momento se puede subir o reemplazar la foto.
 - **Validaciones**:
   - Tipo de archivo: solo `image/jpeg`, `image/png`, `image/webp`.
   - Tamaño máximo: 2MB.
@@ -215,12 +249,41 @@ En Postman: método `POST`, pestaña **Body → form-data**, key `foto` tipo
     formato `{ status, message, data }` (no una página de error de Express).
 - **Persistencia en base de datos**: el archivo en sí vive en el
   filesystem; la tabla `usuarios` (PostgreSQL) solo guarda la **ruta
-  relativa** en la nueva columna `foto` (ej.
+  relativa** en la columna `foto` (ej.
   `/uploads/pacientes/3f2a1b40-....jpg`). Cada subida además crea un
   registro en `Historial` (`accion: "ACTUALIZACIÓN"`), quedando trazado en
   base de datos cuándo se actualizó la foto de cada paciente.
 - Si el paciente ya tenía una foto, el archivo anterior se borra del disco
   al subir una nueva (evita archivos huérfanos acumulándose).
+
+---
+
+## Dashboard (`/inicio`)
+
+La ruta protegida `/inicio` reemplaza al antiguo home estático y ahora
+consulta datos reales en cada carga:
+
+- **Tarjetas de estadísticas**: total de pacientes, cuántos tienen foto
+  cargada, porcentaje de cobertura, y total de registros en `Historial`
+  (todo vía `Usuario.count()` / `Historial.count()`).
+- **Pacientes recientes**: últimos 5 creados, con avatar (foto o
+  iniciales), correo y fecha.
+- **Actividad reciente**: últimas 5 acciones del `Historial` (creación,
+  actualización, foto subida, eliminación), con quién fue y hace cuánto
+  (`moment().fromNow()`).
+- Maneja el estado vacío (sin romperse) cuando aún no hay pacientes.
+
+## Landing (`/`)
+
+Página pública de bienvenida, sin necesidad de login:
+
+- Hero con logo, título, botón "Iniciar sesión" y un contador del total de
+  pacientes gestionados (se oculta solo si la base de datos no responde,
+  sin romper la página).
+- Tres tarjetas de features (fichas de paciente, historial trazable, foto
+  de perfil).
+- Si el visitante ya tiene sesión activa, se lo redirige automáticamente a
+  `/inicio` en vez de mostrarle la landing de nuevo.
 
 ## Notas sobre cambios de esta entrega (Módulo 8)
 
@@ -233,21 +296,28 @@ En Postman: método `POST`, pestaña **Body → form-data**, key `foto` tipo
 - Nuevo endpoint `POST /api/auth/login` para clientes externos.
 - El login web (`auth.controllers.js`) ahora también genera un JWT y lo
   entrega en la cookie `token` (no httpOnly), además de la cookie `admin`
-  original.
+  original. El logout limpia ambas y redirige a la landing (`/`).
 - Nueva columna `Usuario.foto` (Sequelize `sync({ alter: true })` la crea
   sola al levantar el servidor, no requiere migración manual).
 - Nuevo endpoint `POST /api/usuarios/:id/foto` y su middleware `multer`.
 - Vistas actualizadas: `crearUsuarios`, `actualizarUsuario` y
   `perfilUsuario` ahora envían `Authorization: Bearer <token>` en sus
-  llamadas a la API; `perfilUsuario` y `usuarios` muestran la foto (o
-  iniciales como placeholder si no hay foto aún).
+  llamadas a la API; `perfilUsuario`, `usuarios` y el dashboard `home`
+  muestran la foto (o iniciales como placeholder si no hay foto aún).
+- `crearUsuarios.handlebars` ahora permite adjuntar la foto de perfil
+  directo al registrar al paciente, sin tener que ir después a su perfil.
+- Nueva ruta pública `/` con la landing (`landing.handlebars`); el
+  dashboard con estadísticas se movió de `/` a `/inicio` (protegido).
 
 ## Verificación rápida
 
 1. `npm install` y ejecuta el servidor.
-2. Ve a `/login`, entra con las credenciales de administrador.
-3. Crea un paciente nuevo desde `/crear-usuarios`.
-4. Entra a su perfil (`/usuarios/perfil/:id`) y sube una foto.
-5. Recarga: la foto debe verse en el perfil y en el listado (`/usuarios`).
-6. Prueba también vía Postman: login → copiar token → `GET /api/usuarios`
+2. Ve a `/`, revisa la landing pública, y haz clic en "Iniciar sesión".
+3. Entra con las credenciales de administrador → deberías caer en `/inicio`.
+4. Crea un paciente nuevo desde `/crear-usuarios`, adjuntando una foto.
+5. Entra a su perfil (`/usuarios/perfil/:id`) y confirma que la foto se ve.
+6. Vuelve a `/inicio` y revisa que las estadísticas y la actividad
+   reciente reflejen el paciente recién creado.
+7. Cierra sesión y confirma que te devuelve a la landing (`/`), no al login.
+8. Prueba también vía Postman: login → copiar token → `GET /api/usuarios`
    sin token (401) y con token (200).
