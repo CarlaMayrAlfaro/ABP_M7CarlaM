@@ -36,6 +36,14 @@ Usuario.init(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    // Módulo 8: ruta relativa a la foto de perfil del paciente.
+    // El archivo binario vive en public/uploads/pacientes/; aquí solo
+    // se persiste la referencia (ej: "/uploads/pacientes/<uuid>.jpg").
+    foto: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: null,
+    },
   },
   {
     sequelize,
@@ -46,4 +54,3 @@ Usuario.init(
 );
 
 export default Usuario;
-

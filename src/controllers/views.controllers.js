@@ -1,9 +1,65 @@
+import { Op } from "sequelize";
+import moment from "moment";
 import { Usuario, Historial } from "../models/Index.js";
 
-export const viewHome = (req, res) => {
+/**
+ * Página pública de bienvenida, antes del login.
+ * Si ya hay sesión activa, redirige directo al dashboard (/inicio)
+ * para no mostrarle la landing a alguien que ya inició sesión.
+ */
+export const viewLanding = async (req, res) => {
+  if (req.session.isAuthenticated) {
+    return res.redirect("/inicio");
+  }
+
+  let totalPacientes = null;
   try {
-    res.render("home");
+    totalPacientes = await Usuario.count();
   } catch (error) {
+    // La landing no debe romperse si la base de datos no responde:
+    // simplemente se oculta el dato de "pacientes gestionados".
+    console.error("No se pudo obtener el conteo para la landing:", error.message);
+  }
+
+  res.render("landing", { totalPacientes });
+};
+
+export const viewHome = async (req, res) => {
+  try {
+    const [totalPacientes, totalConFoto, totalHistorial, pacientesRecientes, actividadReciente] =
+      await Promise.all([
+        Usuario.count(),
+        Usuario.count({ where: { foto: { [Op.ne]: null } } }),
+        Historial.count(),
+        Usuario.findAll({ order: [["createdAt", "DESC"]], limit: 5 }),
+        Historial.findAll({
+          order: [["createdAt", "DESC"]],
+          limit: 5,
+          include: [{ model: Usuario, as: "usuario" }],
+        }),
+      ]);
+
+    const porcentajeConFoto =
+      totalPacientes > 0 ? Math.round((totalConFoto / totalPacientes) * 100) : 0;
+
+    res.render("home", {
+      stats: {
+        totalPacientes,
+        totalConFoto,
+        totalHistorial,
+        porcentajeConFoto,
+      },
+      pacientesRecientes: pacientesRecientes.map((u) => ({
+        ...u.toJSON(),
+        fechaFormateada: moment(u.createdAt).format("DD MMM YYYY"),
+      })),
+      actividadReciente: actividadReciente.map((h) => ({
+        ...h.toJSON(),
+        fechaFormateada: moment(h.createdAt).fromNow(),
+      })),
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).send("Error al cargar página home...");
   }
 };
@@ -35,9 +91,9 @@ export const viewPerfilUsuario = async (req, res) => {
     const usuario = await Usuario.findByPk(req.params.id, {
       include: [{ model: Historial, as: "historial" }],
     });
-      if (!usuario) {
-            return res.status(404).send("Usuario no encontrado.");
-        }
+    if (!usuario) {
+      return res.status(404).send("Usuario no encontrado.");
+    }
 
     res.render("perfilUsuario", {
       usuario: usuario ? usuario.toJSON() : null,

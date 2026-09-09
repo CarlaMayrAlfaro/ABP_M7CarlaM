@@ -23,3 +23,4 @@ export const authGuard = (req, res, next) => {
 
   res.redirect("/login");
 };
+

@@ -1,200 +1,253 @@
-# MediGest — ABP M7
+# MediGest — ABP Módulos 6, 7 y 8
 
-Aplicación para gestionar pacientes usando **Express** (backend), **Handlebars** (páginas web) y **PostgreSQL** (base de datos).
+Aplicación Express + Handlebars + PostgreSQL (Sequelize) para gestión de pacientes. Incluye vistas protegidas por sesión de administrador y una **API RESTful protegida con JWT**, con subida de la foto de perfil del paciente.
 
-## ¿Qué hace esta app?
+## Resumen por módulo
 
-✅ Crear, editar, ver y eliminar información de pacientes  
-✅ Guardar observaciones sobre cada paciente  
-✅ Registrar automáticamente qué cambios se hacen y cuándo  
-✅ Proteger la app con login de administrador  
-✅ Usar una base de datos real (PostgreSQL)
+- **Módulo 6**: estructura del servidor, rutas/controladores/middlewares,
+  vistas Handlebars, login de administrador por cookie, logging a archivo
+  plano.
+- **Módulo 7**: persistencia real en PostgreSQL vía Sequelize, modelos
+  `Usuario` y `Historial` relacionados 1:N, CRUD completo, transacciones,
+  búsqueda filtrada (`?nombre=`), consulta SQL manual de comparación.
+- **Módulo 8** *(esta entrega)*:
+  - API REST protegida con **JSON Web Tokens**.
+  - **Subida de archivos**: foto de perfil del paciente, con `multer`.
+  - Respuestas de la API con formato consistente `{ status, message, data }`.
 
-## Lo que necesitas
+## Requisitos
 
-- **Node.js** v16+ 
-- **npm** (viene con Node.js)
-- **PostgreSQL** ejecutándose en tu computadora
+- Node.js v18+
+- PostgreSQL corriendo localmente (o accesible por red)
+- npm
 
-## Cómo instalar y usar
-
-### 1️⃣ Descarga y prepara el proyecto
+## Instalación
 
 ```bash
-# Instala los paquetes necesarios
 npm install
 ```
 
-### 2️⃣ Configura la base de datos
+Copia `.env` (o `.env.example` si prefieres no versionarlo) y ajusta tus
+credenciales de PostgreSQL. Ya incluye valores por defecto para desarrollo:
 
-Crea un archivo `.env` en la carpeta raíz (la misma donde está `package.json`):
-
-```
+```env
+DB_NAME=ABP_M7_CarlaM
+DB_USER=postgres
+DB_PASSWORD=123456
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=medigest
-DB_USER=tu_usuario_postgres
-DB_PASSWORD=tu_contraseña
 
 ADMIN_EMAIL=admin@admin.com
 ADMIN_PASSWORD=admin123
+
+JWT_SECRET=medigest_super_secreto_cambiar_en_produccion
+JWT_EXPIRES_IN=2h
 ```
 
-**⚠️ Importante:** Reemplaza `tu_usuario_postgres` y `tu_contraseña` con los datos que usas en PostgreSQL.
-DB_NAME =Cada persona usa el nombre de SU base de datos, solo tiene que coincidir con el nombre real en PostgreSQL.
-
-### 3️⃣ Inicia el servidor
+## Ejecución
 
 ```bash
-node server.js --puerto 3001
+node server.js --puerto 3000
+# o
+npm run dev
 ```
 
-Verás esto en la terminal:
-```
-✅ Conexión a PostgreSQL establecida correctamente.
-✅ Base de datos sincronizada correctamente.
-Servidor escuchando en http://localhost:3001
-```
+Abre `http://localhost:3000/login`.
 
-### 4️⃣ Entra a la app
+## Credenciales de administrador (por defecto)
 
-Abre el navegador y ve a:
-```
-http://localhost:3001/login
-```
-
-Usa estas credenciales:
-- **Correo:** `admin@admin.com`
-- **Contraseña:** `admin123`
+- Correo: `admin@admin.com`
+- Contraseña: `admin123`
 
 ---
 
-## Estructura de carpetas (la basica)
+## Autenticación — dos mecanismos, dos audiencias
 
+Esta app distingue **quién consume la aplicación** y usa un mecanismo de
+sesión distinto para cada uno:
+
+| Consumidor | Ruta protegida | Mecanismo | Middleware |
+|---|---|---|---|
+| Navegador (vistas) | `/`, `/usuarios`, `/crear-usuarios`, etc. | Cookie `admin=true` (httpOnly) | `authGuard` |
+| API REST | `/api/usuarios/*` | JWT (`Authorization: Bearer <token>`) | `authenticateJWT` |
+
+### ¿Por qué separar así?
+
+Las vistas se renderizan del lado del servidor y las visita un navegador
+humano de forma directa (no tiene sentido pedirle que pegue un token). La
+API, en cambio, está pensada para ser **consumida por cualquier cliente**
+(Postman, una app móvil, un frontend separado en otro dominio) — ahí el
+estándar es JWT, portable y sin depender de cookies del navegador.
+
+### ¿Dónde se guarda el token?
+
+Cuando el administrador hace login en `/login` (formulario web), el
+servidor genera el JWT y lo entrega en **dos cookies**:
+
+- `admin=true` — `httpOnly`, la usa `authGuard` para las vistas. El
+  JavaScript del navegador nunca puede leerla (mitiga XSS sobre esa cookie).
+- `token=<jwt>` — **no** `httpOnly`, a propósito: el JavaScript de las
+  vistas (`crearUsuarios.handlebars`, `actualizarUsuario.handlebars`,
+  `perfilUsuario.handlebars`) necesita leerla para armar el header
+  `Authorization: Bearer <token>` en sus llamadas `fetch()` a la API.
+
+> Nota de seguridad: en una SPA "real" (separada del backend) lo más común
+> es guardar el JWT en memoria (una variable JS) en vez de una cookie
+> legible, para reducir superficie ante XSS. Aquí, al ser vistas
+> server-rendered del mismo origen, se optó por una cookie simple para no
+> complejizar el flujo — es una decisión consciente de alcance del ABP, no
+> un patrón recomendado para producción a gran escala.
+
+Un **cliente externo** (Postman, mobile, etc.) no usa cookies en absoluto:
+llama a `POST /api/auth/login` con JSON y recibe el token directo en el
+body de la respuesta.
+
+### ¿Por qué proteger justo esas rutas?
+
+Se protegió **toda la API `/api/usuarios/*`** (no solo 2 rutas puntuales)
+porque cada endpoint expone o modifica datos clínicos de pacientes — no
+existe ningún caso de uso donde deba quedar público. Esto incluye
+explícitamente las 2 rutas mínimas que pide la consigna, y de hecho las
+supera: `GET`, `POST`, `PUT`, `DELETE` y la nueva subida de foto
+(`POST /:id/foto`) requieren todas un JWT válido y **no funcionan sin él**
+(devuelven `401` inmediatamente si falta o es inválido/expiró).
+
+---
+
+## Endpoints
+
+### Vistas (protegidas por cookie de sesión)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/login` | Formulario de login |
+| POST | `/login` | Procesa login, setea cookies `admin` y `token` |
+| POST | `/logout` | Cierra sesión, limpia ambas cookies |
+| GET | `/` | Home |
+| GET | `/crear-usuarios` | Formulario de creación |
+| GET | `/usuarios` | Listado de pacientes |
+| GET | `/usuarios/perfil/:id` | Perfil de paciente (incluye foto y formulario de subida) |
+| GET | `/usuarios/actualizar/:id` | Formulario de edición |
+| GET | `/usuarios/eliminar/:id` | Elimina y redirige al listado |
+
+### API REST (JSON, protegida por JWT salvo donde se indique)
+
+| Método | Ruta | Auth | Descripción |
+|---|---|---|---|
+| POST | `/api/auth/login` | Pública | Devuelve `{ token, tokenType, expiresIn }` |
+| GET | `/api/usuarios` | JWT | Lista pacientes (`?nombre=` busca por nombre o apellido) |
+| GET | `/api/usuarios/sql` | JWT | Mismo listado, vía SQL manual (comparación con ORM) |
+| GET | `/api/usuarios/:id` | JWT | Detalle de un paciente |
+| POST | `/api/usuarios` | JWT | Crea un paciente |
+| PUT | `/api/usuarios/:id` | JWT | Actualiza un paciente |
+| DELETE | `/api/usuarios/:id` | JWT | Elimina un paciente |
+| POST | `/api/usuarios/:id/foto` | JWT | Sube/reemplaza la foto de perfil (`multipart/form-data`, campo `foto`) |
+
+Todas las respuestas de la API siguen el mismo formato:
+
+```json
+{ "status": "success", "message": "...", "data": { } }
 ```
-📦 MediGest
-├── 📁 public              ← Imágenes y estilos (CSS)
-├── 📁 src
-│   ├── 📁 config          ← Conexión a PostgreSQL
-│   ├── 📁 controllers     ← La lógica de cada página
-│   ├── 📁 logs            ← Registro de solicitudes
-│   ├── 📁 middlewares     ← Protección de rutas
-│   ├── 📁 models          ← Estructura de datos (usuarios, historial)
-│   ├── 📁 routes          ← URLs de la app
-│   └── 📁 views           ← Las páginas HTML (Handlebars)
-├── app.js                 ← Configuración de Express
-├── server.js              ← Inicia el servidor
-├── package.json           ← Lista de paquetes
-├── .env                   ← Datos privados (usuario, contraseña)
-└── README.md              ← Este archivo
 
+```json
+{ "status": "error", "message": "...", "data": null }
 ```
 
-## Lo que puedes hacer
+---
 
-### En la web (usando el navegador)
+## Probar con Postman / curl
 
-- **Ver pacientes:** Ve a `/usuarios`
-- **Agregar paciente:** Ve a `/crear-usuarios`
-- **Editar paciente:** Haz clic en un paciente para ver su perfil y editar sus datos (nombre, correo, observaciones)
-- **Cerrar sesión:** Haz clic en "Logout"
+**1. Login y obtención del token**
 
-### Con Postman (programa para probar APIs)
-
-**1. Inicia sesión:**
-```
-POST http://localhost:3001/login
-Body: { "correo": "admin@admin.com", "password": "admin123" }
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"correo":"admin@admin.com","password":"admin123"}'
 ```
 
-**2. Ver todos los pacientes:**
-```
-GET http://localhost:3001/api/usuarios
-```
-
-**3. Crear nuevo paciente:**
-```
-POST http://localhost:3001/api/usuarios
-Body: {
-  "nombre": "Juan",
-  "apellido": "Pérez",
-  "correo": "juan@example.com"
-  "observaciones": "Diabetes Mellitus tipo 2"
+Respuesta:
+```json
+{
+  "status": "success",
+  "message": "Autenticación exitosa.",
+  "data": { "token": "eyJhbGciOi...", "tokenType": "Bearer", "expiresIn": "2h" }
 }
 ```
 
-**4. Editar paciente (agregar observaciones):**
-```
-PUT http://localhost:3001/api/usuarios/[ID_DEL_PACIENTE]
-Body: {
-  "nombre": "Juan",
-  "apellido": "Pérez",
-  "correo": "juan@example.com",
-  "observaciones": "Paciente con DM2"
-}
-```
+**2. Llamar a una ruta protegida con el token**
 
-**5. Eliminar paciente:**
-```
-DELETE http://localhost:3001/api/usuarios/[ID_DEL_PACIENTE]
-```
-
-> **Nota:** Reemplaza `[ID_DEL_PACIENTE]` con el ID real del paciente (lo ves cuando haces GET).
-
----
-
-## ¿Cómo funciona?
-
-### 1. **Guardas datos en PostgreSQL** 📊
-Cuando creas o editas un paciente, la información se guarda en una base de datos real (PostgreSQL), no en un archivo.
-
-### 2. **Se registra el historial** 📝
-Cada acción (crear, editar, eliminar) se guarda automáticamente en el "historial" del paciente.
-
-### 3. **Proteges con login** 🔐
-Solo el administrador (con correo y contraseña) puede ver y editar pacientes.
-
-### 4. **Usas Sequelize** 🔗
-Es una herramienta que facilita trabajar con la base de datos sin escribir SQL complicado.
-
----
-
-## Cambios principales en M7
-
-✨ **PostgreSQL:** Antes guardábamos en un archivo JSON, ahora usamos una base de datos real  
-✨ **Sequelize ORM:** Hace más fácil comunicarse con PostgreSQL  
-✨ **Observaciones:** Nuevo campo para anotaciones clínicas  
-✨ **Historial automático:** Se registra quién cambió qué y cuándo  
-✨ **Tablas:** Se crean automáticamente cuando inicias la app  
-
----
-
-## Si algo no funciona
-
-### Error: "no existe la relación"
-→ Probablemente PostgreSQL no está corriendo. Abre el programa de PostgreSQL.
-
-### Error: "no se puede conectar"
-→ Verifica que los datos en `.env` sean correctos.
-
-### No veo los datos
-→ Asegúrate de haber hecho login primero con las credenciales correctas.
-
-### ¿Cómo revisar la base de datos?
-Abre **pgAdmin** (programa que viene con PostgreSQL) o usa este comando en terminal:
 ```bash
-psql -U tu_usuario_postgres -d medigest
-SELECT * FROM usuarios;
+curl http://localhost:3000/api/usuarios \
+  -H "Authorization: Bearer eyJhbGciOi..."
 ```
+
+**3. Sin token → 401**
+
+```bash
+curl http://localhost:3000/api/usuarios
+# { "status": "error", "message": "Token de autenticación no proporcionado.", "data": null }
+```
+
+**4. Subir la foto de un paciente**
+
+```bash
+curl -X POST http://localhost:3000/api/usuarios/<ID_PACIENTE>/foto \
+  -H "Authorization: Bearer eyJhbGciOi..." \
+  -F "foto=@/ruta/local/a/imagen.jpg"
+```
+
+En Postman: método `POST`, pestaña **Body → form-data**, key `foto` tipo
+**File**, y en **Headers** agregar `Authorization: Bearer <token>`.
 
 ---
 
-## Resumen rápido
+## Subida de archivos — foto de perfil del paciente
 
-| Lo que quieres | Cómo hacerlo |
-|---|---|
-| Crear paciente | Web: `/crear-usuarios` o POST a `/api/usuarios` |
-| Ver pacientes | Web: `/usuarios` o GET a `/api/usuarios` |
-| Editar paciente | Web: click en paciente + formulario o PUT a `/api/usuarios/ID` |
-| Eliminar paciente | Web: botón eliminar o DELETE a `/api/usuarios/ID` |
-| Agregar observaciones | Editar paciente + campo "Observaciones" |
+- **Middleware**: `src/middlewares/upload.middleware.js`, usando `multer`
+  con almacenamiento en disco (`diskStorage`).
+- **Carpeta destino**: `public/uploads/pacientes/` (se sirve como estática
+  vía `express.static`, así que la foto queda accesible directo en
+  `http://localhost:3000/uploads/pacientes/<archivo>`).
+- **Validaciones**:
+  - Tipo de archivo: solo `image/jpeg`, `image/png`, `image/webp`.
+  - Tamaño máximo: 2MB.
+  - Si el tipo o tamaño no son válidos, la API responde `400` con el
+    formato `{ status, message, data }` (no una página de error de Express).
+- **Persistencia en base de datos**: el archivo en sí vive en el
+  filesystem; la tabla `usuarios` (PostgreSQL) solo guarda la **ruta
+  relativa** en la nueva columna `foto` (ej.
+  `/uploads/pacientes/3f2a1b40-....jpg`). Cada subida además crea un
+  registro en `Historial` (`accion: "ACTUALIZACIÓN"`), quedando trazado en
+  base de datos cuándo se actualizó la foto de cada paciente.
+- Si el paciente ya tenía una foto, el archivo anterior se borra del disco
+  al subir una nueva (evita archivos huérfanos acumulándose).
+
+## Notas sobre cambios de esta entrega (Módulo 8)
+
+- Se agregó `jsonwebtoken` y `multer` a las dependencias (y se completó
+  `package.json`, que no tenía `sequelize`/`pg`/`dotenv` pese a que el
+  código ya los usaba).
+- Nuevo `src/utils/jwt.js` (firma/verificación) y
+  `src/middlewares/jwt.middleware.js` (`authenticateJWT`), que reemplaza a
+  `authGuard` específicamente en `usuarios.routes.js`.
+- Nuevo endpoint `POST /api/auth/login` para clientes externos.
+- El login web (`auth.controllers.js`) ahora también genera un JWT y lo
+  entrega en la cookie `token` (no httpOnly), además de la cookie `admin`
+  original.
+- Nueva columna `Usuario.foto` (Sequelize `sync({ alter: true })` la crea
+  sola al levantar el servidor, no requiere migración manual).
+- Nuevo endpoint `POST /api/usuarios/:id/foto` y su middleware `multer`.
+- Vistas actualizadas: `crearUsuarios`, `actualizarUsuario` y
+  `perfilUsuario` ahora envían `Authorization: Bearer <token>` en sus
+  llamadas a la API; `perfilUsuario` y `usuarios` muestran la foto (o
+  iniciales como placeholder si no hay foto aún).
+
+## Verificación rápida
+
+1. `npm install` y ejecuta el servidor.
+2. Ve a `/login`, entra con las credenciales de administrador.
+3. Crea un paciente nuevo desde `/crear-usuarios`.
+4. Entra a su perfil (`/usuarios/perfil/:id`) y sube una foto.
+5. Recarga: la foto debe verse en el perfil y en el listado (`/usuarios`).
+6. Prueba también vía Postman: login → copiar token → `GET /api/usuarios`
+   sin token (401) y con token (200).

@@ -4,8 +4,11 @@ import { authGuard } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-//OBTENER TODOS LOS USUARIOS
-router.get("/", authGuard, viewsController.viewHome);
+//PÁGINA PRINCIPAL PÚBLICA (antes del login)
+router.get("/", viewsController.viewLanding);
+
+//DASHBOARD (protegido, antes vivía en "/")
+router.get("/inicio", authGuard, viewsController.viewHome);
 
 //VISTA CREAR USUARIOS
 router.get("/crear-usuarios", authGuard, viewsController.viewCrearUsuarios);

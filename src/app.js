@@ -19,7 +19,7 @@ moment.locale("es");
 const app = express();
 
 //ARCHIVOS ESTÁTICOS
-
+// Sirve también public/uploads/pacientes/, donde quedan las fotos subidas.
 app.use(express.static(path.join(__dirname, "../public")));
 
 //CONFIGURACIÓN MOTOR PLANTILLAS
@@ -66,9 +66,8 @@ app.use("/", authRoutes);
 app.use("/", viewsRoutes);
 
 //RUTAS DE API
-
+// Protegida por JWT (ver src/middlewares/jwt.middleware.js)
 app.use("/api/usuarios", usuariosRoutes);
-
 
 // CONEXIÓN Y SINCRONIZACIÓN CON POSTGRESQL
 
@@ -86,6 +85,5 @@ export const initDatabase = async () => {
     throw error;
   }
 };
-
 
 export default app;

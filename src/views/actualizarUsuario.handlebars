@@ -47,15 +47,31 @@
 </div>
 
 <script>
+  // Módulo 8: la API (/api/usuarios) ahora exige JWT (ver crearUsuarios.handlebars).
+  function obtenerTokenDeCookie() {
+    const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
   const formUpdateUsuario = document.getElementById("form-update-usuario");
 
   formUpdateUsuario.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     try {
+      const token = obtenerTokenDeCookie();
+      if (!token) {
+        alert("Tu sesión expiró. Vuelve a iniciar sesión.");
+        window.location.href = "/login";
+        return;
+      }
+
       const response = await fetch("/api/usuarios/{{usuario.id}}", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
         body: JSON.stringify({
           nombre: document.getElementById("nombre").value,
           apellido: document.getElementById("apellido").value,
@@ -65,6 +81,12 @@
       });
 
       const data = await response.json();
+
+      if (response.status === 401) {
+        alert("Tu sesión expiró. Vuelve a iniciar sesión.");
+        window.location.href = "/login";
+        return;
+      }
 
       if (!response.ok) {
         return alert(data.message || "No fue posible actualizar el paciente.");

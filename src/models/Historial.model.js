@@ -18,10 +18,10 @@ Historial.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-     usuarioId: {
-            type: DataTypes.UUID,
-            allowNull: false,
-        },
+    usuarioId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
   },
   {
     sequelize,

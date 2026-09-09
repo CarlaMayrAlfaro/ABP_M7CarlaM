@@ -1,3 +1,5 @@
 node_modules/
 .env
-logs/
+logs/*.txt
+public/uploads/pacientes/*
+!public/uploads/pacientes/.gitkeep

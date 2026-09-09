@@ -96,6 +96,25 @@
                         ></textarea>
                     </div>
 
+                    <!-- Foto de perfil (opcional) -->
+                    <div class="mb-4">
+                        <label for="foto" class="form-label fw-semibold">
+                            Foto de perfil
+                        </label>
+
+                        <input
+                            type="file"
+                            class="form-control"
+                            name="foto"
+                            id="foto"
+                            accept="image/jpeg,image/png,image/webp"
+                        >
+
+                        <div class="form-text">
+                            Opcional. JPG, PNG o WEBP, máximo 2MB. También puedes agregarla después desde el perfil del paciente.
+                        </div>
+                    </div>
+
                     <!-- Botones -->
                     <div class="d-flex justify-content-end gap-2">
 
@@ -139,6 +158,14 @@
 
 
 <script>
+    // Módulo 8: la API (/api/usuarios) ahora exige JWT.
+    // El login web guarda el token en una cookie NO httpOnly ("token")
+    // para que este script pueda leerlo y enviarlo como Bearer.
+    function obtenerTokenDeCookie() {
+        const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : null;
+    }
+
     const formCreateUsuario = document.getElementById("form-create-usuario");
 
     formCreateUsuario.addEventListener("submit", async (event) => {
@@ -154,6 +181,13 @@
             // Validar que no estén vacíos
             if (!nombre || !apellido || !correo) {
                 alert("Por favor completa los campos obligatorios: nombre, apellido y correo");
+                return;
+            }
+
+            const token = obtenerTokenDeCookie();
+            if (!token) {
+                alert("Tu sesión expiró. Vuelve a iniciar sesión.");
+                window.location.href = "/login";
                 return;
             }
 
@@ -174,7 +208,8 @@
             const response = await fetch("/api/usuarios", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
                 },
                 body: jsonBody
             });
@@ -184,16 +219,50 @@
 
             if (response.status === 201) {
                 const alertSuccess = document.getElementById("alert-success");
-                alertSuccess.textContent = data.message;
+                const usuarioId = data.data.id;
+
+                // Si se seleccionó una foto, se sube justo después de crear
+                // al paciente, reutilizando POST /api/usuarios/:id/foto.
+                const inputFoto = document.getElementById("foto");
+                let mensajeFinal = data.message;
+
+                if (inputFoto.files.length > 0) {
+                    const formDataFoto = new FormData();
+                    formDataFoto.append("foto", inputFoto.files[0]);
+
+                    try {
+                        const fotoResponse = await fetch("/api/usuarios/" + usuarioId + "/foto", {
+                            method: "POST",
+                            headers: {
+                                "Authorization": "Bearer " + token
+                                // Sin "Content-Type": el navegador arma el boundary de multipart solo.
+                            },
+                            body: formDataFoto,
+                        });
+
+                        const fotoData = await fotoResponse.json();
+
+                        if (!fotoResponse.ok) {
+                            mensajeFinal += " (La foto no se pudo subir: " + (fotoData.message || "error desconocido") + ")";
+                        }
+                    } catch (fotoError) {
+                        console.error("Error al subir la foto:", fotoError);
+                        mensajeFinal += " (La foto no se pudo subir por un error de red.)";
+                    }
+                }
+
+                alertSuccess.textContent = mensajeFinal;
                 alertSuccess.classList.remove("d-none");
 
                 formCreateUsuario.reset();
 
-                const usuarioId = data.data.id;
                 setTimeout(() => {
                     location.href = "/usuarios/perfil/" + usuarioId;
                 }, 2000);
 
+            } else if (response.status === 401) {
+                alert("Tu sesión expiró. Vuelve a iniciar sesión.");
+                window.location.href = "/login";
             } else {
                 alert("Error: " + (data.message || "No se pudo crear el paciente"));
             }

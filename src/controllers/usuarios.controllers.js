@@ -1,6 +1,9 @@
 import { Op } from "sequelize";
+import * as fs from "node:fs";
 import sequelize from "../config/database.js";
 import { Usuario, Historial } from "../models/Index.js";
+import { UPLOAD_DIR } from "../middlewares/upload.middleware.js";
+import * as path from "node:path";
 
 const usuarioResponse = (usuario) => usuario.toJSON();
 
@@ -148,8 +151,8 @@ export const updateUsuario = async (req, res) => {
       });
     }
 
-   const { nombre, apellido, correo, observaciones } = req.body;
- 
+    const { nombre, apellido, correo, observaciones } = req.body;
+
     await usuario.update({
       nombre: nombre || usuario.nombre,
       apellido: apellido || usuario.apellido,
@@ -238,6 +241,83 @@ export const deleteUsuario = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Error al eliminar el usuario. Se realizó rollback.",
+      data: null,
+    });
+  }
+};
+
+/**
+ * Módulo 8 — Subida de archivos.
+ * POST /api/usuarios/:id/foto  (multipart/form-data, campo "foto")
+ * Protegida por authenticateJWT + uploadFoto (ver usuarios.routes.js).
+ *
+ * Guarda la imagen en public/uploads/pacientes/ (vía multer) y persiste
+ * la ruta relativa en la columna Usuario.foto. Si el paciente ya tenía
+ * una foto previa, borra el archivo anterior del disco para no dejar
+ * huérfanos.
+ */
+export const uploadFotoUsuario = async (req, res) => {
+  try {
+    const usuario = await Usuario.findByPk(req.params.id);
+
+    if (!usuario) {
+      // Si Sequelize no encontró al usuario, no dejamos el archivo huérfano en disco.
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({
+        status: "error",
+        message: "Usuario no encontrado.",
+        data: null,
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        status: "error",
+        message: 'No se recibió ningún archivo. Envía un campo "foto" (JPG, PNG o WEBP, máx. 2MB).',
+        data: null,
+      });
+    }
+
+    // Elimina la foto anterior del disco, si existía
+    if (usuario.foto) {
+      const rutaAnterior = path.join(UPLOAD_DIR, path.basename(usuario.foto));
+      if (fs.existsSync(rutaAnterior)) {
+        fs.unlinkSync(rutaAnterior);
+      }
+    }
+
+    const rutaPublica = `/uploads/pacientes/${req.file.filename}`;
+    await usuario.update({ foto: rutaPublica });
+
+    await Historial.create({
+      usuarioId: usuario.id,
+      accion: "ACTUALIZACIÓN",
+      detalle: "Se actualizó la foto de perfil del paciente.",
+    });
+
+    const actualizado = await Usuario.findByPk(usuario.id, {
+      include: [{ model: Historial, as: "historial" }],
+    });
+
+    res.json({
+      status: "success",
+      message: "Foto de perfil actualizada correctamente.",
+      data: usuarioResponse(actualizado),
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (_) {
+        /* no-op */
+      }
+    }
+
+    res.status(500).json({
+      status: "error",
+      message: "Error al subir la foto del paciente.",
       data: null,
     });
   }
