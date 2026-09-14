@@ -916,3 +916,10 @@ f80b0a - [septiembre 09 del 2026, 08:56:41 am], Método: GET, Ruta: /inicio
 029225 - [septiembre 09 del 2026, 08:57:25 am], Método: GET, Ruta: /usuarios
 526abf - [septiembre 09 del 2026, 08:57:39 am], Método: GET, Ruta: /crear-usuarios
 2a4f27 - [septiembre 09 del 2026, 08:58:00 am], Método: GET, Ruta: /usuarios/perfil/0a1e3d1f-7f3b-44ee-aada-6286bda226bb
+cd90d0 - [septiembre 09 del 2026, 09:13:46 am], Método: GET, Ruta: /inicio
+3fdc49 - [septiembre 09 del 2026, 09:14:06 am], Método: POST, Ruta: /logout
+3deb35 - [septiembre 09 del 2026, 09:14:06 am], Método: GET, Ruta: /
+926ac9 - [septiembre 13 del 2026, 11:20:42 am], Método: GET, Ruta: /
+8ec321 - [septiembre 13 del 2026, 11:20:53 am], Método: GET, Ruta: /
+6cdf27 - [septiembre 13 del 2026, 11:20:54 am], Método: GET, Ruta: /favicon.ico
+cdd046 - [septiembre 14 del 2026, 10:03:08 am], Método: GET, Ruta: /notes

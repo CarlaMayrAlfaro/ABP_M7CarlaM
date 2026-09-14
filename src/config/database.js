@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Sequelize } from "sequelize";
+import pg from "pg";
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -10,6 +11,7 @@ const sequelize = new Sequelize(
     port: Number(process.env.DB_PORT) || 5432,
     dialect: "postgres",
     logging: false,
+    dialectModule: pg
   }
 );
 
