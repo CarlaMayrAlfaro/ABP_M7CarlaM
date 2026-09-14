@@ -923,3 +923,9 @@ cd90d0 - [septiembre 09 del 2026, 09:13:46 am], Método: GET, Ruta: /inicio
 8ec321 - [septiembre 13 del 2026, 11:20:53 am], Método: GET, Ruta: /
 6cdf27 - [septiembre 13 del 2026, 11:20:54 am], Método: GET, Ruta: /favicon.ico
 cdd046 - [septiembre 14 del 2026, 10:03:08 am], Método: GET, Ruta: /notes
+779d71 - [septiembre 14 del 2026, 11:10:27 am], Método: GET, Ruta: /
+5374d5 - [septiembre 14 del 2026, 11:10:30 am], Método: GET, Ruta: /login
+fc2c9b - [septiembre 14 del 2026, 11:10:38 am], Método: POST, Ruta: /login
+ed7fa6 - [septiembre 14 del 2026, 11:10:38 am], Método: GET, Ruta: /inicio
+0f7a3a - [septiembre 14 del 2026, 11:10:41 am], Método: GET, Ruta: /inicio
+a50393 - [septiembre 14 del 2026, 11:10:51 am], Método: GET, Ruta: /usuarios

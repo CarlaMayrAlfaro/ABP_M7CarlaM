@@ -31,12 +31,6 @@ export const escribirArchivo = (nombreArchivo, data) => {
 
 
 export const registrarLog = (nombreArchivo, data) => {
-    let ruta = path.join(__dirname, "..", "logs", nombreArchivo);
-
-    if(!fs.existsSync(ruta)){
-        throw new Error(`Nombre de archivo: ${nombreArchivo} no existe...`);
-    }
-
-    fs.appendFileSync(ruta, data+"\n", "utf8");
+    console.log(data);
     return true;
-}   
+}
